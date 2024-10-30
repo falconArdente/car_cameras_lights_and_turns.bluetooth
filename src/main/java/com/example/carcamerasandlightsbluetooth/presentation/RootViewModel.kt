@@ -182,10 +182,9 @@ class RootViewModel @Inject constructor(
 
     fun reScan() {
         viewModelScope.launch(Dispatchers.IO) {
-            deviceInteractor.stopScan()
+            deviceInteractor.finish()
             delay(900L)
             deviceInteractor.scanForDevice()
         }
-
     }
 }
