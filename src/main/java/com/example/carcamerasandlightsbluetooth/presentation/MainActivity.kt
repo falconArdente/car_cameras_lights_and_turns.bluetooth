@@ -12,13 +12,19 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
+import androidx.lifecycle.lifecycleScope
 import com.example.carcamerasandlightsbluetooth.App
 import com.example.carcamerasandlightsbluetooth.R
 import com.example.carcamerasandlightsbluetooth.databinding.ActivityMainBinding
 import com.example.carcamerasandlightsbluetooth.domain.model.DeviceState
 import com.example.carcamerasandlightsbluetooth.domain.model.Timings
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+const val LOG_VIEW_SCROLL_CORRECTION = 2
+const val PRESCROLL_DELAY = 30L
 
 class MainActivity : AppCompatActivity() {
     @Inject
@@ -27,11 +33,15 @@ class MainActivity : AppCompatActivity() {
     private val binding: ActivityMainBinding
         get() = _binding!!
     private var timingValuesArray: ArrayList<EditText>? = null
+
     override fun onResume() {
         super.onResume()
 
         if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
+        }
+        viewModel.stateToObserve.value?.let {
+            if (!viewModel.stateToObserve.value!!.isSetTimings) scrollLogView()
         }
     }
 
@@ -123,35 +133,54 @@ class MainActivity : AppCompatActivity() {
         renderBluetoothSign(mainState.deviceState)
         renderCommandSet(mainState.deviceState, mainState.isLocked)
         renderLock(mainState.isLocked)
-        renderTimingSettings(mainState)
+        renderTimingSettingsAndLogView(mainState)
     }
 
-    private fun renderTimingSettings(mainState: MainState) {
-        binding.timingsSet.root.isGone = !mainState.isSetTimings
-        binding.LogView.isGone = mainState.isSetTimings
-        with(binding.timingsSet) {
-            renderTimingValueAndHelper(
-                bounceValue,
-                bounceBlue,
-                mainState.deviceState.timings.bounce
-            )
-            renderTimingValueAndHelper(
-                repeaterValue,
-                repeaterBlue,
-                mainState.deviceState.timings.repeater
-            )
-            renderTimingValueAndHelper(
-                frontDelayValue,
-                frontBlue,
-                mainState.deviceState.timings.frontDelay
-            )
-            renderTimingValueAndHelper(
-                rearDelayValue,
-                rearBlue,
-                mainState.deviceState.timings.rearDelay
-            )
+    private fun scrollLogView() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            delay(PRESCROLL_DELAY)
+            with(binding.LogView) {
+                val scrollAmount =
+                    measuredHeight - lineHeight * (lineCount + LOG_VIEW_SCROLL_CORRECTION)
+                if (scrollAmount < 0) {
+                    scrollTo(0, scrollAmount * -1)
+                }
+            }
         }
-        timingsToSendCheck()
+    }
+
+    private fun renderTimingSettingsAndLogView(mainState: MainState) {
+        if (mainState.isSetTimings) {
+            binding.timingsSet.root.isGone = false
+            binding.LogView.isGone = true
+            with(binding.timingsSet) {
+                renderTimingValueAndHelper(
+                    bounceValue,
+                    bounceBlue,
+                    mainState.deviceState.timings.bounce
+                )
+                renderTimingValueAndHelper(
+                    repeaterValue,
+                    repeaterBlue,
+                    mainState.deviceState.timings.repeater
+                )
+                renderTimingValueAndHelper(
+                    frontDelayValue,
+                    frontBlue,
+                    mainState.deviceState.timings.frontDelay
+                )
+                renderTimingValueAndHelper(
+                    rearDelayValue,
+                    rearBlue,
+                    mainState.deviceState.timings.rearDelay
+                )
+            }
+            timingsToSendCheck()
+        } else {
+            binding.LogView.isGone = false
+            binding.timingsSet.root.isGone = true
+            scrollLogView()
+        }
     }
 
     private fun renderTimingValueAndHelper(editText: EditText, helper: TextView, number: Int) {
