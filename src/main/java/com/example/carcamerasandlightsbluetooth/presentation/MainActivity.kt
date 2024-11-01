@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 const val LOG_VIEW_SCROLL_CORRECTION = 2
-const val PRESCROLL_DELAY = 30L
+const val PRE_SCROLL_DELAY = 30L
 
 class MainActivity : AppCompatActivity() {
     @Inject
@@ -138,7 +138,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun scrollLogView() {
         lifecycleScope.launch(Dispatchers.IO) {
-            delay(PRESCROLL_DELAY)
+            delay(PRE_SCROLL_DELAY)
             with(binding.LogView) {
                 val scrollAmount =
                     measuredHeight - lineHeight * (lineCount + LOG_VIEW_SCROLL_CORRECTION)
