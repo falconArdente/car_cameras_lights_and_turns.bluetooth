@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 const val LOG_VIEW_SCROLL_CORRECTION = 2
-const val PRE_SCROLL_DELAY = 30L
+const val PRE_SCROLL_DELAY = 25L
 
 class MainActivity : AppCompatActivity() {
     @Inject
